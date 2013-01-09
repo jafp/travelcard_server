@@ -1,0 +1,413 @@
+<!doctype html>
+<html>
+    <head>
+        <title>IHK TCP Visualizer</title>
+         <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+        <!-- <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyA-yKzGn14TqOdlxbmipGqm4WhFFyuh-kA&sensor=false"></script>-->
+        <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+        <style type="text/css">
+       	 	/* http://meyerweb.com/eric/tools/css/reset/ 
+			   v2.0 | 20110126
+			   License: none (public domain)
+			*/
+			
+			html, body, div, span, applet, object, iframe,
+			h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+			a, abbr, acronym, address, big, cite, code,
+			del, dfn, em, img, ins, kbd, q, s, samp,
+			small, strike, strong, sub, sup, tt, var,
+			b, u, i, center,
+			dl, dt, dd, ol, ul, li,
+			fieldset, form, label, legend,
+			table, caption, tbody, tfoot, thead, tr, th, td,
+			article, aside, canvas, details, embed, 
+			figure, figcaption, footer, header, hgroup, 
+			menu, nav, output, ruby, section, summary,
+			time, mark, audio, video {
+				margin: 0;
+				padding: 0;
+				border: 0;
+				font-size: 100%;
+				font: inherit;
+				vertical-align: baseline;
+			}
+			/* HTML5 display-role reset for older browsers */
+			article, aside, details, figcaption, figure, 
+			footer, header, hgroup, menu, nav, section {
+				display: block;
+			}
+			body {
+				line-height: 1;
+			}
+			ol, ul {
+				list-style: none;
+			}
+			blockquote, q {
+				quotes: none;
+			}
+			blockquote:before, blockquote:after,
+			q:before, q:after {
+				content: '';
+				content: none;
+			}
+			table {
+				border-collapse: collapse;
+				border-spacing: 0;
+			}
+
+			
+			html, body {
+				height: 100%;
+				width: 100%;
+			}
+
+
+            body {
+                font-family: verdana, sans-serif;
+            }
+         
+            header {
+				margin-bottom: 10px	;
+                background: #4096EE;
+                color: white;
+                overflow: hidden;
+ 
+            }
+             
+            header h1 {
+            	font-size: 18px;
+            	font-weight: bold;
+                float: left;
+                margin: 15px 0;
+                padding: 0 10px;
+            }
+             
+            header h2 {
+                text-align: center;
+                float: right;
+                min-width: 40px;
+                margin: 5px 10px 0 10px;
+                padding: 5px 10px;
+                background: black;
+                color: white;
+            }
+             
+            header h2:hover {
+                background: #444;
+            }
+             
+            header h2 span {
+                font-size: 13px;
+                display: block;
+            }
+             
+            .map {
+	            position:fixed;
+				top: 70px;
+				left: 10px;
+				bottom: 10px;
+            	width: 60%;
+            }
+            
+            .events {
+            	position: fixed;
+            	top: 70px;
+            	right: 10px;
+            	bottom: 10px;
+            	width: 35%;
+            }
+            
+            .events-inner {
+            	height: 100%;
+            	overflow-y: scroll;
+            }
+            
+            .info {
+            	font-size: 14px;
+            }
+            
+            .info span {
+            	color: #666;
+            }
+    
+            #state-bar {
+                clear: both;
+                padding: 0 10px;
+            }
+         
+            #state {
+                font-size: 18px;
+                font-weight: bold;
+                background: #eee;
+                padding: 10px;
+            }
+             
+            #zone, #mode {
+                cursor: pointer;
+            }
+            
+            
+
+            #events li {
+                list-style: none;
+                font-size:14px;
+                margin-bottom: 5px;
+                padding: 10px 10px;
+                background: #eee;
+            }
+             
+            .state-offline {
+                background: orange !important;
+                color: white;
+            }
+             
+            .state-connected {
+                background: green !important;
+                color: white
+            }
+             
+            .state-disconnected {
+                background: red !important;
+                color: white;
+            }
+            .modal {
+                visibility: hidden;
+                position: fixed;
+                width: 300px;
+                top: 40%;
+                left: 50%;
+                margin: -150px 0 0 -150px;
+                padding: 20px;
+                background: #ffffee;
+                border: 3px solid #222;
+                 
+            }
+            .control {
+                margin-bottom: 10px;
+            }
+             
+             
+        </style>
+    </head>
+     
+    <body>
+    
+        <div class="body">
+            <header>
+                <h1>IHK TCP Visualizer</h1>
+                <h2 id="state" class="state-connected">
+                	Connected
+                </h2>
+            </header>
+             
+            <div class="map">
+            	<div id="map_canvas" style="width:100%;height:100%"></div>
+            </div>
+            
+            <div class="events">
+            	<div class="events-inner">
+					<ul id="events"></ul>
+				</div>
+            </div>
+        </div>
+        
+
+    </body>
+     
+    <script type="text/javascript">
+        (function() {
+        	
+        	var zones = {
+        		1: [55.6760968, 12.5683371],
+        		2: [55.6768516, 12.494087],
+        		3: [55.6375, 12.5783333],
+        		4: [55.594023, 12.660503],
+        		30: [55.756381, 12.579774],
+        		31: [55.730275, 12.4248999],
+        		32: [55.673514, 12.465726],
+        		33: [55.642348, 12.443489],
+        		40: [55.775472, 12.589495],
+        		41: [55.765314, 12.457244],
+        		42: [55.702865, 12.376816],
+        		43: [55.6671726, 12.3909676],
+        		44: [55.618777, 12.417375],
+        		50: [55.82703, 12.573719],
+        		51: [55.794614, 12.461796],
+        		52: [55.761482, 12.399054],
+        		53: [55.724508, 12.354765],
+        		54: [55.6603146, 12.3477715],
+        		55: [55.613972, 12.34637],
+        		60: [55.8598884, 12.5601636],
+        		61: [55.8276706, 12.4730435],
+        		62: [55.785188, 12.321892],
+        		63: [56.8195034, 8.4409517],
+        		64: [55.724047, 12.285928],
+        		65: [55.681832, 12.246834],
+        		66: [55.6592732, 12.242497],
+        		67: [55.5985117, 12.241408]
+        	}
+        	
+        	var events = {},
+        		markers = {},
+        		map,
+        		eventSource = new EventSource("/events"),
+        		
+                eventsEl = document.getElementById('events'),
+                stateEl = document.getElementById('state');
+        
+	        map = new google.maps.Map(document.getElementById("map_canvas"), {
+	            center: new google.maps.LatLng(55.669217, 12.402144),
+	            zoom: 10,
+	            mapTypeId: google.maps.MapTypeId.ROADMAP
+	        });
+	    
+            eventSource.addEventListener('events', function(event) {
+				var data = JSON.parse(event.data);
+				for (var i = 0; i < data.length; i++) {
+					var ev = data[i], marker, info, el;
+					events[ev.id] = ev;
+					
+					if (zones[ev.zone]) {
+						var pos = new google.maps.LatLng(zones[ev.zone][0], zones[ev.zone][1]);
+						
+						if (markers[ev.customer.id]) {
+							// Remove existing marker
+							markers[ev.customer.id].setMap(null);
+						}
+						
+						marker = new google.maps.Marker({
+							position: pos,
+							map: map,
+							title: '(' + ev.customer.id + ') ' + ev.customer.name + ' - ' + (ev.type === 1 ? 'Checked in' : 'Checked out')
+						});
+						
+						info = new google.maps.InfoWindow({
+							content: '<div class="info">(' + ev.customer.id + ') ' + ev.customer.name + ' - ' + 
+								(ev.type === 1 ? 'Checked in' : 'Checked out') + ' <br/><span>'+ ev.date +'</span></div>'
+						});
+						
+						info.open(map, marker);
+						markers[ev.customer.id] = marker;
+					}
+					
+					el = renderEvent(data[i]);
+					eventsEl.insertBefore(el, eventsEl.firstChild);
+					highlight(el);
+					
+				}
+
+				console.log(google.maps);
+            });
+          
+            window.addEventListener('no-connection', function(event) {
+                stateEl.innerHTML = 'NO CONNECTION';
+                stateEl.className = 'state-disconnected';
+            });
+            
+            window.addEventListener('good-connection', function(event) {
+                stateEl.innerHTML = 'CONNECTED';
+                stateEl.className = 'state-connected';
+            }); 
+           
+            // 
+            // Utility functions
+            //
+            
+            function renderEvent(event) {
+            	return createElement('<li>[' + event.customer.id + '] ' + event.customer.name + ': ' 
+            			+ (event.type === 1 ? 'Check in' : 'Check out') + ' at zone ' + event.zone + '</li>');
+            }
+            
+            function createElement(string) {
+            	var el = document.createElement('div');
+            	el.innerHTML = string;
+            	return el.firstChild;
+            }
+                 
+            function highlight(element) {
+                var originalColor = element.style.backgroundColor;
+                element.style.backgroundColor = '#ffff88';
+                 
+                setTimeout(function() {
+                    element.style.backgroundColor = originalColor;
+                }, 800);
+            }
+             
+            function fireEvent(name) {
+                var event = document.createEvent('Event');
+                event.initEvent(name, true, true);
+                event.data = {};
+                window.dispatchEvent(event);
+            }
+             
+            function get(method, data, callback) {
+                var xhr = new XMLHttpRequest();
+                 
+                var noResponseTimer = setTimeout(function() {
+                    xhr.abort();
+                }, 2000);
+                 
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState != 4) {
+                        return;
+                    }
+                     
+                    if (xhr.status === 200) {
+                        fireEvent('good-connection');
+                        clearTimeout(noResponseTimer);
+                        if (callback) {
+                            callback(xhr);
+                        }
+                    } else {
+                        fireEvent('no-connection');
+                    }
+                }
+                 
+                data = data || {};
+                 
+                xhr.open('GET', '/api?method=' + method + '&' + makeDataURI(data));
+                xhr.send();
+            }
+             
+            function post(method, data, callback) {
+                var xhr = new XMLHttpRequest(),
+                    dataString = '';
+                 
+                for (var key in data) {
+                    dataString += (key + '=' + encodeURI(data[key])) + '&';
+                }
+     
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState != 4) {
+                        return;
+                    }
+                     
+                    if (xhr.status === 200) {
+                        if (callback) {
+                            callback(xhr);
+                        };
+                    }
+                }
+                 
+                xhr.open('POST', '/api?method=' + method, true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.send(dataString);
+            }
+             
+            function makeDataURI(data) {
+                var dataString = '';
+                for (var key in data) {
+                    dataString += (key + '=' + encodeURIComponent(data[key])) + '&';
+                }
+                return dataString;
+            }
+             
+           	get('ping');
+             
+            setInterval(function() {
+                get('ping');
+            }, 1000);
+        })();
+    
+    </script>
+</html>
